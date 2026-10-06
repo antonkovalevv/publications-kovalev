@@ -34,6 +34,29 @@ class CrossrefWork(BaseModel):
     issued: CrossrefDate | None = None
 
 
+class OpenAlexSource(BaseModel):
+    """Источник (издание) в записи OpenAlex."""
+
+    display_name: str | None = None
+    issn_l: str | None = None
+    issn: list[str] | None = None
+
+
+class OpenAlexLocation(BaseModel):
+    """Локация публикации в записи OpenAlex."""
+
+    source: OpenAlexSource | None = None
+
+
+class OpenAlexWork(BaseModel):
+    """Запись OpenAlex о публикации."""
+
+    doi: str | None = None
+    title: str | None = None
+    publication_year: int | None = None
+    primary_location: OpenAlexLocation | None = None
+
+
 def load_items(path: Path) -> list[dict[str, Any]]:
     """Читает файл ответа Crossref и возвращает список записей."""
     with path.open(encoding="utf-8") as file:
@@ -119,3 +142,32 @@ def find_duplicates(publications: list[Publication]) -> list[str]:
     """
     counts = Counter(p.doi for p in publications if p.doi is not None)
     return [doi for doi, n in counts.items() if n > 1]
+
+
+def openalex_to_publication(work: OpenAlexWork) -> Publication:
+    """Приводит запись OpenAlexWork к объекту Publication."""
+    issns: list[str] = []
+    if work.primary_location and work.primary_location.source:
+        source = work.primary_location.source
+        candidates: list[str] = []
+        if source.issn_l:
+            candidates.append(source.issn_l)
+        if source.issn:
+            candidates.extend(source.issn)
+        for raw in candidates:
+            normalized = normalize_issn(raw)
+            if normalized and normalized not in issns:
+                issns.append(normalized)
+
+    journal_title: str | None = None
+    if work.primary_location and work.primary_location.source:
+        journal_title = work.primary_location.source.display_name
+
+    return Publication(
+        title=work.title or "",
+        year=work.publication_year,
+        doi=normalize_doi(work.doi),
+        journal_title=journal_title,
+        authors=[],
+        issns=issns,
+    )
