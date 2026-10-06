@@ -4,4 +4,5 @@ doi,reason
 10.5555/pw2.0012,title: Field required
 12345,DOI: Input should be a valid string
 10.5555/pw2.0014,ISSN: Input should be a valid list
+10.5555/pw2.0015,to_publication: title публикации не может быть пустым или из пробелов
 ,DOI: Field required
