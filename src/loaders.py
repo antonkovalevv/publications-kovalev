@@ -2,6 +2,7 @@
 
 import csv
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -109,3 +110,12 @@ def to_publication(work: CrossrefWork) -> Publication:
         authors=authors,
         issns=issns,
     )
+
+
+def find_duplicates(publications: list[Publication]) -> list[str]:
+    """Возвращает DOI, встречающиеся более одного раза.
+
+    Сравнение — по нормализованному DOI (None игнорируется).
+    """
+    counts = Counter(p.doi for p in publications if p.doi is not None)
+    return [doi for doi, n in counts.items() if n > 1]

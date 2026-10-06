@@ -36,3 +36,23 @@ def normalize_doi(value: str | None) -> str | None:
             cleaned = cleaned[len(prefix) :]
             break
     return cleaned if DOI_PATTERN.fullmatch(cleaned) else None
+
+
+def issn_check_digit_ok(issn: str) -> bool:
+    """Проверяет контрольный разряд нормализованного ISSN.
+
+    Ожидает строку из 8 символов: 7 цифр и контрольный символ
+    (цифра или X). Возвращает True, если контроль сходится.
+    """
+    if len(issn) != 8:
+        return False
+    if not issn[:7].isdigit():
+        return False
+
+    digits = [int(c) for c in issn[:7]]
+    weights = [8, 7, 6, 5, 4, 3, 2]
+    total = sum(w * d for w, d in zip(weights, digits, strict=True))
+    check = (11 - total % 11) % 11
+    expected = "X" if check == 10 else str(check)
+
+    return issn[7] == expected
