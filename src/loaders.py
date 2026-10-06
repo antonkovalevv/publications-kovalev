@@ -1,6 +1,6 @@
 """Чтение выгрузок и входной контроль данных."""
 
-import csv  # noqa: F401 — понадобится в функции save_rejected
+import csv
 import json
 from pathlib import Path
 from typing import Any
@@ -45,4 +45,7 @@ def save_rejected(rejected: list[tuple[Any, str]], path: Path) -> None:
     Первая строка файла — заголовок doi,reason; далее по строке
     на каждую отклонённую запись.
     """
-    raise NotImplementedError
+    with path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["doi", "reason"])
+        writer.writerows(rejected)
