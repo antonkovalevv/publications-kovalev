@@ -2,14 +2,17 @@
 
 import csv
 import json
+import logging
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
-from src.models import Publication
+from src.models import Journal, Publication
 from src.normalize import normalize_doi, normalize_issn
+
+logger = logging.getLogger("publications")
 
 
 class CrossrefDate(BaseModel):
@@ -171,3 +174,43 @@ def openalex_to_publication(work: OpenAlexWork) -> Publication:
         authors=[],
         issns=issns,
     )
+
+
+def check_publications(
+    records: list[dict[str, Any]],
+) -> tuple[list[Publication], list[tuple[Any, str]]]:
+    """Входной контроль и приведение записей к модели публикации."""
+    publications, rejected = check_records(records)
+    logger.info("принято: %d, отклонено: %d", len(publications), len(rejected))
+    return publications, rejected
+
+
+def load_registry_rows(path: Path) -> list[str]:
+    if not path.exists():
+        raise FileNotFoundError(f"справочник изданий не найден: {path}")
+
+    rows = path.read_text(encoding="utf-8").splitlines()
+
+    if len(rows) < 2:
+        raise ValueError(f"справочник изданий пуст: {path}")
+
+    logger.info("загружено записей справочника: %d", len(rows) - 1)
+    return rows[1:]
+
+
+def load_registry(path: Path) -> dict[str, Journal]:
+    """Строит справочник изданий: ISSN -> издание."""
+    registry: dict[str, Journal] = {}
+    for title, issn_print, issn_online, level in csv.reader(
+        load_registry_rows(path)
+    ):
+        journal = Journal(
+            title=title,
+            issn_print=normalize_issn(issn_print),
+            issn_online=normalize_issn(issn_online),
+            level=int(level) if level else None,  # пусто — не указан
+        )
+        for issn in (journal.issn_print, journal.issn_online):
+            if issn is not None:
+                registry[issn] = journal
+    return registry
