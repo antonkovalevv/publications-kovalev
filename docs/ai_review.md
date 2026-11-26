@@ -54,6 +54,7 @@ from typing import Optional
 
 class ISSType(Enum):
     """Тип ISSN."""
+
     PRINT = "print"
     ELECTRONIC = "electronic"
 
@@ -67,6 +68,7 @@ class Author:
         orcid: Идентификатор ORCID (уникальный цифровой код исследователя).
         affiliation: Название организации, с которой автор связан.
     """
+
     name: str
     orcid: Optional[str] = None
     affiliation: Optional[str] = None
@@ -80,6 +82,7 @@ class ISSN:
         value: Значение ISSN в формате XXXX-XXXX.
         type: Тип ISSN (печатный или электронный).
     """
+
     value: str
     type: ISSType
 
@@ -96,6 +99,7 @@ class Publication:
         issns: Список ISSN издания (печатный и/или электронный).
         venue: Название издания (журнал, конференция, сборник).
     """
+
     title: str
     authors: list[Author] = field(default_factory=list)
     year: Optional[int] = None
